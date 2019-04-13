@@ -1,11 +1,11 @@
 # Android
-*.iml
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
-.DS_Store
-/build
-/captures
-.externalNativeBuild
+android/MusicalLights/*.iml
+android/MusicalLights/.gradle
+android/MusicalLights/local.properties
+android/MusicalLights/.idea/workspace.xml
+android/MusicalLights/.idea/libraries
+android/MusicalLights/.DS_Store
+android/MusicalLights/build
+android/MusicalLights/captures
+android/MusicalLights/.externalNativeBuild
 
