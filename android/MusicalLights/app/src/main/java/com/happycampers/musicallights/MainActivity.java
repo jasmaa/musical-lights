@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -22,39 +23,48 @@ import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Android main
+ */
 public class MainActivity extends AppCompatActivity {
 
-    TextView outputText;
-    TextView inputText;
-    Button sendButton;
-
+    private TextView outputText;
+    private TextView inputText;
+    private Button sendButton;
 
     private final static int REQUEST_ENABLE_BT = 1;
-    private static final UUID MY_UUID = UUID.fromString("0000110E-0000-1000-8000-00805F9B34FB");
+    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private String targetName = "ESP32test";
     private BluetoothDevice targetDevice;
     private BluetoothSocket mSocket;
 
     private final String TAG = "TEST";
 
+    /**
+     * Runs on start up
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // widgets
         outputText = (TextView)findViewById(R.id.output);
-        inputText = (TextView) findViewById(R.id.editText);
+        outputText.setMovementMethod(new ScrollingMovementMethod());
 
+        inputText = (TextView) findViewById(R.id.editText);
 
         sendButton = (Button) findViewById(R.id.sendButton);
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    mSocket.getOutputStream().write(inputText.getText().toString().getBytes());
+                    mSocket.getOutputStream().write((inputText.getText().toString() + "\n").getBytes());
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
+                    outputText.append("Could not write to steam\n");
                 }
             }
         });
@@ -63,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         // check if bluetooth can be used
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if(adapter == null) {
-            outputText.setText("Does not support bluetooth");
+            outputText.append("Does not support bluetooth\n");
         }
         else{
             // ask to enable bluetooth
@@ -72,22 +82,23 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
 
+            // get uuid
+            //outputText.append("" + targetDevice.getUuids());
+
             // find target from paired devices
             Set<BluetoothDevice> pairedDevices = adapter.getBondedDevices();
             for (BluetoothDevice device : pairedDevices) {
-                String deviceName = device.getName();
-                String deviceAddr = device.getAddress();
 
-                if(targetName.equals(deviceName)){
+                if(targetName.equals(device.getName())){
                     targetDevice = device;
                 }
             }
 
             if(targetDevice == null){
-                outputText.setText(outputText.getText() + "Could not find device\n");
+                outputText.append("Could not find device\n");
             }
             else{
-                outputText.setText(outputText.getText() + "Found device: " + targetDevice.toString() + "\n");
+                outputText.append("Found device: " + targetDevice.toString() + "\n");
 
                 // make socket connection
                 if(targetDevice.getBondState() == targetDevice.BOND_BONDED) {
@@ -116,6 +127,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Runs on destroy
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
