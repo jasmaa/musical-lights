@@ -1,3 +1,9 @@
-# Musical Lights App
+# Musical Lights
 
-Android app to communicate with ESP32 via Bluetooths
+LEDs that respond to music from a phone
+
+## How to Use
+
+## Structure
+  - `android`: Android app code to communicate with ESP32 via Bluetooth
+  - `server`: ESP32 BT server
