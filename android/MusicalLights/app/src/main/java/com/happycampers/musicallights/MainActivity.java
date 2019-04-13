@@ -1,14 +1,13 @@
 package com.happycampers.musicallights;
 
+import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -18,10 +17,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -34,14 +30,18 @@ public class MainActivity extends AppCompatActivity {
     private TextView outputText;
     private TextView inputText;
     private Button reconnectButton;
+    private Button colorPickerButton;
     private ProgressBar progressBar;
     private ArrayList<Button> modeButtons;
+
+    private int currentColor = Color.CYAN;
 
     private final static int REQUEST_ENABLE_BT = 1;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private String targetName = "ESP32test";
     private BluetoothDevice targetDevice;
     private BluetoothSocket mSocket;
+    private BluetoothA2dp a2dp;
 
     private final String TAG = "TEST";
 
@@ -53,6 +53,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Intent intent = getIntent();
+        if(intent.hasExtra("color")){
+            currentColor = Integer.parseInt(intent.getStringExtra("color"));
+        }
 
         // widgets
         outputText = (TextView)findViewById(R.id.output);
@@ -169,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // reconnect button
         reconnectButton = (Button) findViewById((R.id.reconnectBtn));
         reconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -177,6 +183,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // color picker button
+        colorPickerButton = (Button) findViewById((R.id.colorPickerBtn));
+        colorPickerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent myIntent = new Intent(MainActivity.this, ColorSlidersActivity.class);
+                //myIntent.putExtra("color", currentColor+"");
+                MainActivity.this.startActivity(myIntent);
+            }
+        });
+
+        // set progress bar
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
 
@@ -192,6 +210,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+
     /**
      * Toggle UI
      * @param value
@@ -201,6 +220,7 @@ public class MainActivity extends AppCompatActivity {
             btn.setEnabled(value);
         }
         reconnectButton.setEnabled(value);
+        colorPickerButton.setEnabled(value);
     }
 
     /**
@@ -225,6 +245,7 @@ public class MainActivity extends AppCompatActivity {
             if(adapter == null) {
             }
             else{
+
                 // ask to enable bluetooth
                 if(!adapter.isEnabled()){
                     Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -267,14 +288,36 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 }
+
+
+                // Get a2dp proxy
+                BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
+                    public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                        if (profile == BluetoothProfile.A2DP) {
+                            a2dp = (BluetoothA2dp) proxy;
+                            Log.d(TAG,"Bluetooth A2DP: " + a2dp);
+                            Log.d(TAG,"Proxy: "+proxy);
+                            Log.d(TAG,"Devices: " + a2dp.getConnectedDevices().toString());
+                        }
+                    }
+                    public void onServiceDisconnected(int profile) {
+                        if (profile == BluetoothProfile.A2DP) {
+                            a2dp = null;
+                        }
+                    }
+                };
+                adapter.getProfileProxy(MainActivity.this, mProfileListener, BluetoothProfile.A2DP);
+
             }
 
+            /*
             try {
                 Thread.sleep(2000);
             }
             catch (Exception e){
 
             }
+            */
 
             return success;
         }
@@ -283,10 +326,11 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean result) {
             super.onPostExecute(result);
 
-            outputText.append(result ? "Connected!" : "Failed to connect\n");
+            outputText.append(result ? "Connected!\n" : "Failed to connect\n");
             progressBar.setVisibility(View.INVISIBLE);
             toggleInput(true);
         }
     }
+
 }
 

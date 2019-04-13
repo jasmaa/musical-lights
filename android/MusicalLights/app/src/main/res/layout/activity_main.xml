@@ -43,21 +43,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Mode 0" />
+                android:text="Rainbow" />
 
             <Button
                 android:id="@+id/mode1Btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Mode 1" />
+                android:text="Solid" />
 
             <Button
                 android:id="@+id/mode2Btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Mode 2" />
+                android:text="Strobe" />
 
         </TableRow>
 
@@ -72,7 +72,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Mode 3" />
+                android:text="Pulse" />
 
             <Button
                 android:id="@+id/mode4Btn"
@@ -86,7 +86,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Mode 5" />
+                android:text="Music" />
         </TableRow>
 
         <TableRow
@@ -96,7 +96,16 @@
             tools:layout_editor_absoluteY="8dp">
 
             <Button
+                android:id="@+id/colorPickerBtn"
+                style="@style/Widget.AppCompat.Button.Colored"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Color" />
+
+            <Button
                 android:id="@+id/reconnectBtn"
+                style="@style/Widget.AppCompat.Button.Colored"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
