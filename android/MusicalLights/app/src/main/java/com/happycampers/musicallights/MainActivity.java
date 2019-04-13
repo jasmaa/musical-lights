@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.ParcelUuid;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -31,7 +33,8 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView outputText;
     private TextView inputText;
-    private Button sendButton;
+    private Button reconnectButton;
+    private ProgressBar progressBar;
     private ArrayList<Button> modeButtons;
 
     private final static int REQUEST_ENABLE_BT = 1;
@@ -68,6 +71,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {0};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -81,6 +88,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {1};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -94,6 +105,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {2};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -107,6 +122,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {3};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -120,6 +139,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {4};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -133,6 +156,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 try {
                     byte[] msg = {5};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
                     mSocket.getOutputStream().write(msg);
                 }
                 catch(IOException e){
@@ -142,15 +169,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ((Button) findViewById((R.id.reconnectBtn))).setOnClickListener(new View.OnClickListener() {
+        reconnectButton = (Button) findViewById((R.id.reconnectBtn));
+        reconnectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                btConnect();
+                new BTConnectTask().execute();
             }
         });
 
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.INVISIBLE);
+
         // try to connect to bluetooth
-        btConnect();
+        new BTConnectTask().execute();
     }
 
     /**
@@ -162,60 +193,99 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Connects to ESP32 via Bluetooth
+     * Toggle UI
+     * @param value
      */
-    private void btConnect(){
-        // check if bluetooth can be used
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if(adapter == null) {
-            outputText.append("Does not support bluetooth\n");
+    private void toggleInput(boolean value){
+        for(Button btn : modeButtons){
+            btn.setEnabled(value);
         }
-        else{
-            // ask to enable bluetooth
-            if(!adapter.isEnabled()){
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            }
+        reconnectButton.setEnabled(value);
+    }
 
-            // find target from paired devices
-            Set<BluetoothDevice> pairedDevices = adapter.getBondedDevices();
-            for (BluetoothDevice device : pairedDevices) {
+    /**
+     * Async bluetooth connection task
+     */
+    private class BTConnectTask extends AsyncTask<Void, Void, Boolean> {
 
-                if(targetName.equals(device.getName())){
-                    targetDevice = device;
-                }
-            }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
 
-            if(targetDevice == null){
-                outputText.append("Could not find device\n");
+            toggleInput(false);
+            progressBar.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean success = false;
+
+            // check if bluetooth can be used
+            BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+            if(adapter == null) {
             }
             else{
-                outputText.append("Found device: " + targetDevice.toString() + "\n");
+                // ask to enable bluetooth
+                if(!adapter.isEnabled()){
+                    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                    startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+                }
 
-                // make socket connection
-                if(targetDevice.getBondState() == targetDevice.BOND_BONDED) {
-                    Log.d(TAG, targetDevice.getName());
+                // find target from paired devices
+                Set<BluetoothDevice> pairedDevices = adapter.getBondedDevices();
+                for (BluetoothDevice device : pairedDevices) {
 
-                    try {
-                        mSocket = targetDevice.createInsecureRfcommSocketToServiceRecord(MY_UUID);
-                    } catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        Log.d(TAG, "socket not created");
-                        e1.printStackTrace();
+                    if(targetName.equals(device.getName())){
+                        targetDevice = device;
                     }
-                    try {
-                        mSocket.connect();
-                    } catch (IOException e) {
+                }
+
+                if(targetDevice == null){
+                }
+                else{
+                    // make socket connection
+                    if(targetDevice.getBondState() == targetDevice.BOND_BONDED) {
+                        Log.d(TAG, targetDevice.getName());
                         try {
-                            mSocket.close();
-                            Log.d(TAG, "Cannot connect");
+                            mSocket = targetDevice.createInsecureRfcommSocketToServiceRecord(MY_UUID);
+                            success = true;
                         } catch (IOException e1) {
-                            Log.d(TAG, "Socket not closed");
+                            // TODO Auto-generated catch block
+                            Log.d(TAG, "socket not created");
                             e1.printStackTrace();
+                        }
+                        try {
+                            mSocket.connect();
+                        } catch (IOException e) {
+                            try {
+                                mSocket.close();
+                                Log.d(TAG, "Cannot connect");
+                            } catch (IOException e1) {
+                                Log.d(TAG, "Socket not closed");
+                                e1.printStackTrace();
+                            }
                         }
                     }
                 }
             }
+
+            try {
+                Thread.sleep(2000);
+            }
+            catch (Exception e){
+
+            }
+
+            return success;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            super.onPostExecute(result);
+
+            outputText.append(result ? "Connected!" : "Failed to connect\n");
+            progressBar.setVisibility(View.INVISIBLE);
+            toggleInput(true);
         }
     }
 }
