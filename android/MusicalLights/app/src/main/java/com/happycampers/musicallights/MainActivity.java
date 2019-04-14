@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private ArrayList<Button> modeButtons;
 
-    private int currentColor = Color.CYAN;
+    private int currentColor = Color.WHITE;
 
     private final static int REQUEST_ENABLE_BT = 1;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -298,7 +298,7 @@ public class MainActivity extends AppCompatActivity {
                             a2dp = (BluetoothA2dp) proxy;
                             Log.d(TAG,"Bluetooth A2DP: " + a2dp);
                             Log.d(TAG,"Proxy: "+proxy);
-                            Log.d(TAG,"Devices: " + a2dp.getConnectedDevices().toString());
+                            Log.d(TAG,"Devices: " + a2dp.getConnectedDevices());
                         }
                     }
                     public void onServiceDisconnected(int profile) {
