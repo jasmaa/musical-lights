@@ -19,6 +19,7 @@ BluetoothSerial SerialBT;
 #endif
 
 #define DATA_PIN    12
+#define AUDIO_PIN 36
 #define LED_TYPE    NEOPIXEL
 #define NUM_LEDS    300
 CRGB leds[NUM_LEDS];
@@ -101,9 +102,9 @@ void setup() {
 uint8_t tick = 0; // rotating "base color" used by many of the patterns
 int mode = 1;   // for incoming serial data
 int incomingByte = 0;
-int numModes = 7;
+int numModes = 10;
 int maxV,minV;
-double amplitude, percentAmplitude; 
+double amplitude, percentAmplitude, previousPercent = 0, avg = 0; 
 int r, g, b;
 
 void loop() {
@@ -142,28 +143,35 @@ void loop() {
     case 5: //Volume Bar
       maxV = 0;
       minV = 0;
+      avg = 0;
       //sampling
       for(int i=0; i<SAMPLES; i++)
       {
           microseconds = micros();    //Overflows after around 70 minutes!
        
-          vReal[i] = analogRead(0);
-          if(vReal[i]>maxV)
-            maxV = vReal[i];
-          else if(vReal[i]<minV)
-            minV = vReal[i];
-       
+          vReal[i] = analogRead(AUDIO_PIN);
+          if(abs(vReal[i])>maxV)
+            maxV = abs(vReal[i]);
+          avg+=vReal[i];
           while(micros() < (microseconds + sampling_period_us)){
           }
       }
+      avg/=SAMPLES;
+      amplitude = abs(maxV-avg);
+      percentAmplitude = amplitude/600;
 
-      amplitude = maxV - minV;
-      
-      if(amplitude > 300){
-        percentBar(1);
-      }else{
-        percentBar(.5);
+      //Filter to make change more dramatic
+      percentAmplitude-=0.1;
+      percentAmplitude*=1.25;
+      if(previousPercent+percentAmplitude < 0.1){
+        percentAmplitude = 0;
       }
+      if(abs(previousPercent-percentAmplitude > 0.5){
+        percentAmplitude = (percentAmplitude + previousPercent)/2;
+      }
+      Serial.println(percentAmplitude);
+      percentBar(percentAmplitude);
+      previousPercent = percentAmplitude;
       break;
       
     case 6: //Beat Flash
@@ -174,7 +182,7 @@ void loop() {
       {
           microseconds = micros();    //Overflows after around 70 minutes!
        
-          vReal[i] = analogRead(0);
+          vReal[i] = analogRead(AUDIO_PIN);
           if(vReal[i]>maxV)
             maxV = vReal[i];
           else if(vReal[i]<minV)
@@ -184,37 +192,28 @@ void loop() {
           }
       }
 
-      amplitude = maxV-minV;
-      percentAmplitude = amplitude/500;
+      amplitude = abs(maxV-minV);
+      percentAmplitude = amplitude/2000;
+      
       //Filter to make change more dramtic
-      percentAmplitude-=0.5;
-      percentAmplitude*=3;
+      percentAmplitude-=0.7;
+      percentAmplitude*=1.5;
+      percentAmplitude = (percentAmplitude + previousPercent)/2;
       percentBar(percentAmplitude);
+      previousPercent = percentAmplitude;
       break;
 
-    case 7: //Amplitude Pulse
-      maxV = 0;
-      minV = 0;
-      
-      for(int i=0; i<SAMPLES; i++)
-      {
-          microseconds = micros();    //Overflows after around 70 minutes!
-       
-          vReal[i] = analogRead(0);
-          if(vReal[i]>maxV)
-            maxV = vReal[i];
-          else if(vReal[i]<minV)
-            minV = vReal[i];
-       
-          while(micros() < (microseconds + sampling_period_us)){
-          }
+    case 7:
+      policeLights();
+      break;
+    
+    case 9:
+      for(int i = 0; i<280; i++){
+        r = SerialBT.read();
+        g = SerialBT.read();
+        b = SerialBT.read();
+        leds[i].setRGB(r, g, b);
       }
-
-      amplitude = maxV-minV;
-      //Filter to make change more dramtic
-      percentAmplitude-=0.5;
-      percentAmplitude*=3;
-      pulse((tick)%255, (tick*10+20)%255, (tick*100+50)%255, 5);
       break;
       
     default:
@@ -225,6 +224,7 @@ void loop() {
   FastLEDshowESP32();
   FastLED.delay(1000/FRAMES_PER_SECOND); 
   EVERY_N_MILLISECONDS( 20 ) { tick++; } // slowly cycle the "base color" through the rainbow
+  delay(10);
 }
 
 
@@ -257,7 +257,7 @@ void shiftLEDs(){
 
 //Sets a certain percent of the leds to the color (e.g. 0.5, 0.69)
 void percentBar(float percent){
-  for(int i = 0; i<min((int)percent*NUM_LEDS,NUM_LEDS); i++){
+  for(int i = 0; i<max(min((int)(percent*NUM_LEDS),NUM_LEDS),0); i++){
     //15% - Violet
     if(i<0.15*NUM_LEDS)
       leds[i] = CRGB::Violet;
@@ -279,9 +279,8 @@ void percentBar(float percent){
     //100% - White
     else
       leds[i] = CRGB::White;
-    
   }
-  for(int i = min((int)percent*NUM_LEDS, NUM_LEDS); i<NUM_LEDS; i++){
+  for(int i = max(min((int)(percent*NUM_LEDS), NUM_LEDS), 0); i<NUM_LEDS; i++){
     leds[i].setRGB(0,0,0);
   }
 }
@@ -292,10 +291,17 @@ void rainbowPercent(float percent){
 }
 
 //Police Lights
-void policeLight() {
-  //Flash red 3 times
-  
-  //Flash blue 3 times
+void policeLights() {
+  int phase = tick;
+  if(phase%2 == 0){
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+  }
+  else if(phase%20 < 6){
+    fill_solid(leds, NUM_LEDS, CRGB::Red);
+  }
+  else if(phase%20 > 9 && phase%20<16){
+    fill_solid(leds, NUM_LEDS, CRGB::Blue);
+  }
 }
 
 //Strobe
