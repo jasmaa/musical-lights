@@ -6,8 +6,11 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.media.audiofx.Visualizer;
 import android.os.AsyncTask;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -16,11 +19,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.jar.Manifest;
 
 /**
  * Android main
@@ -39,11 +44,13 @@ public class MainActivity extends AppCompatActivity {
     private final static int REQUEST_ENABLE_BT = 1;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private String targetName = "ESP32test";
+    private final String TAG = "TEST";
+
     private BluetoothDevice targetDevice;
     private BluetoothSocket mSocket;
     private BluetoothA2dp a2dp;
-
-    private final String TAG = "TEST";
+    private Visualizer visualizer;
+    private byte[] audioBuffer;
 
     /**
      * Runs on start up
@@ -54,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // if coming back from a solid
         Intent intent = getIntent();
         if(intent.hasExtra("color")){
             currentColor = Integer.parseInt(intent.getStringExtra("color"));
@@ -71,24 +79,9 @@ public class MainActivity extends AppCompatActivity {
         modeButtons.add((Button) findViewById(R.id.mode3Btn));
         modeButtons.add((Button) findViewById(R.id.mode4Btn));
         modeButtons.add((Button) findViewById(R.id.mode5Btn));
+        modeButtons.add((Button) findViewById(R.id.mode6Btn));
+
         modeButtons.get(0).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    byte[] msg = {0};
-                    if(mSocket == null){
-                        outputText.append("No socket connection\n");
-                        return;
-                    }
-                    mSocket.getOutputStream().write(msg);
-                }
-                catch(IOException e){
-                    Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
-                }
-            }
-        });
-        modeButtons.get(1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
@@ -101,15 +94,31 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
+                    outputText.append("Could not write to stream\n");
                 }
             }
         });
-        modeButtons.get(2).setOnClickListener(new View.OnClickListener() {
+        modeButtons.get(1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    byte[] msg = {2};
+
+                    byte red = (byte)((currentColor >> 16) & 0xff);
+                    byte green = (byte)((currentColor >>  8) & 0xff);
+                    byte blue = (byte)((currentColor) & 0xff);
+
+                    // get rid of 0 byte
+                    if(red == 0){
+                        red = 1;
+                    }
+                    if(green == 0){
+                        green = 0;
+                    }
+                    if(blue == 0){
+                        blue = 1;
+                    }
+
+                    byte[] msg = {2, red, green, blue};
                     if(mSocket == null){
                         outputText.append("No socket connection\n");
                         return;
@@ -118,11 +127,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
+                    outputText.append("Could not write to stream\n");
                 }
             }
         });
-        modeButtons.get(3).setOnClickListener(new View.OnClickListener() {
+        modeButtons.get(2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
@@ -135,15 +144,31 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
+                    outputText.append("Could not write to stream\n");
                 }
             }
         });
-        modeButtons.get(4).setOnClickListener(new View.OnClickListener() {
+        modeButtons.get(3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
-                    byte[] msg = {4};
+
+                    byte red = (byte)((currentColor >> 16) & 0xff);
+                    byte green = (byte)((currentColor >>  8) & 0xff);
+                    byte blue = (byte)((currentColor) & 0xff);
+
+                    // get rid of 0 byte
+                    if(red == 0){
+                        red = 1;
+                    }
+                    if(green == 0){
+                        green = 0;
+                    }
+                    if(blue == 0){
+                        blue = 1;
+                    }
+
+                    byte[] msg = {4, red, green, blue};
                     if(mSocket == null){
                         outputText.append("No socket connection\n");
                         return;
@@ -152,11 +177,11 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
+                    outputText.append("Could not write to stream\n");
                 }
             }
         });
-        modeButtons.get(5).setOnClickListener(new View.OnClickListener() {
+        modeButtons.get(4).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
@@ -169,7 +194,41 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch(IOException e){
                     Log.d(TAG, "Could not write to stream");
-                    outputText.append("Could not write to steam\n");
+                    outputText.append("Could not write to stream\n");
+                }
+            }
+        });
+        modeButtons.get(5).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    byte[] msg = {6};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
+                    mSocket.getOutputStream().write(msg);
+                }
+                catch(IOException e){
+                    Log.d(TAG, "Could not write to stream");
+                    outputText.append("Could not write to stream\n");
+                }
+            }
+        });
+        modeButtons.get(6).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    byte[] msg = {7};
+                    if(mSocket == null){
+                        outputText.append("No socket connection\n");
+                        return;
+                    }
+                    mSocket.getOutputStream().write(msg);
+                }
+                catch(IOException e){
+                    Log.d(TAG, "Could not write to stream");
+                    outputText.append("Could not write to stream\n");
                 }
             }
         });
@@ -191,6 +250,17 @@ public class MainActivity extends AppCompatActivity {
                 Intent myIntent = new Intent(MainActivity.this, ColorSlidersActivity.class);
                 myIntent.putExtra("color", currentColor+"");
                 MainActivity.this.startActivity(myIntent);
+
+                if(mSocket != null){
+                    try{
+                        mSocket.close();
+                    }
+                    catch(IOException e){
+                        Log.d(TAG, "Could not write to stream");
+                        outputText.append("Could not close stream\n");
+                    }
+                }
+
                 finish();
             }
         });
@@ -199,9 +269,43 @@ public class MainActivity extends AppCompatActivity {
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setVisibility(View.INVISIBLE);
 
+        // request permissions for visualizer
+        //ActivityCompat.requestPermissions(MainActivity.this, new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+
         // try to connect to bluetooth
         new BTConnectTask().execute();
+        //new SendAudioTask().execute();
     }
+
+    /*
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1: {
+
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    visualizer = new Visualizer(0);
+                    visualizer.setEnabled(true);
+                    audioBuffer = new byte[50];
+                    //visualizer.getWaveForm(audioBuffer);
+                    //outputText.append(audioBuffer.toString());
+
+                    // new SendAudioTask().execute();
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    Toast.makeText(MainActivity.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
+    }
+    */
 
     /**
      * Runs on destroy
@@ -209,6 +313,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        //visualizer.release();
     }
 
 
@@ -222,6 +327,39 @@ public class MainActivity extends AppCompatActivity {
         }
         reconnectButton.setEnabled(value);
         colorPickerButton.setEnabled(value);
+    }
+
+    private class SendAudioTask extends AsyncTask<Void, Void, Boolean> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            while(true){
+
+                if(visualizer == null){
+                    continue;
+                }
+
+                visualizer.getWaveForm(audioBuffer);
+
+                /*
+                try{
+                    mSocket.getOutputStream().write(audioBuffer);
+                }
+                catch (IOException e){
+                    Log.d(TAG, "Could not write to stream");
+                }
+                */
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            super.onPostExecute(result);
+        }
     }
 
     /**
@@ -290,7 +428,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-
+                /*
                 // Get a2dp proxy
                 BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
                     public void onServiceConnected(int profile, BluetoothProfile proxy) {
@@ -308,17 +446,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 };
                 adapter.getProfileProxy(MainActivity.this, mProfileListener, BluetoothProfile.A2DP);
-
+                */
             }
-
-            /*
-            try {
-                Thread.sleep(2000);
-            }
-            catch (Exception e){
-
-            }
-            */
 
             return success;
         }
