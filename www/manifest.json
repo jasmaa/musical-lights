@@ -1,0 +1,13 @@
+{
+  "short_name": "f",
+  "permissions": [
+    {
+      "usbDevices": [
+        {
+          "vendorId": 4292,
+          "productId": 60000
+        }
+      ]
+    }
+  ]
+}
