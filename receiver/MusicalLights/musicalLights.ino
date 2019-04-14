@@ -21,7 +21,7 @@ BluetoothSerial SerialBT;
 #define DATA_PIN    12
 #define AUDIO_PIN 36
 #define LED_TYPE    NEOPIXEL
-#define NUM_LEDS    300
+#define NUM_LEDS    280
 CRGB leds[NUM_LEDS];
 
 #define BRIGHTNESS          255
@@ -120,6 +120,13 @@ void loop() {
       }
     }
   }
+  if (Serial.available()){
+    incomingByte = Serial.read();
+    if(incomingByte <= numModes){
+      mode = incomingByte;
+    }
+  }
+  
   switch(mode){
     case 1: //Rainbow
       rainbow();
@@ -166,9 +173,6 @@ void loop() {
       if(previousPercent+percentAmplitude < 0.1){
         percentAmplitude = 0;
       }
-      if(abs(previousPercent-percentAmplitude > 0.5){
-        percentAmplitude = (percentAmplitude + previousPercent)/2;
-      }
       Serial.println(percentAmplitude);
       percentBar(percentAmplitude);
       previousPercent = percentAmplitude;
@@ -207,11 +211,11 @@ void loop() {
       policeLights();
       break;
     
-    case 9:
-      for(int i = 0; i<280; i++){
-        r = SerialBT.read();
-        g = SerialBT.read();
-        b = SerialBT.read();
+    case 9: //Serial Communication
+      for(int i = 0; i<NUM_LEDS; i++){
+        r = Serial.read();
+        g = Serial.read();
+        b = Serial.read();
         leds[i].setRGB(r, g, b);
       }
       break;
@@ -258,21 +262,12 @@ void shiftLEDs(){
 //Sets a certain percent of the leds to the color (e.g. 0.5, 0.69)
 void percentBar(float percent){
   for(int i = 0; i<max(min((int)(percent*NUM_LEDS),NUM_LEDS),0); i++){
-    //15% - Violet
-    if(i<0.15*NUM_LEDS)
-      leds[i] = CRGB::Violet;
     //30% - Blue
-    else if(i<0.3*NUM_LEDS)
+    if(i<0.3*NUM_LEDS)
       leds[i] = CRGB::Blue;
-    //45% - Green
-    else if(i<0.45*NUM_LEDS)
-      leds[i] = CRGB::Green;
-    //60% - Yellow
+    //60% - Green
     else if(i<0.6*NUM_LEDS)
-      leds[i] = CRGB::Yellow;
-    //75% - Orange
-    else if(i<0.75*NUM_LEDS)
-      leds[i] = CRGB::Orange;
+      leds[i] = CRGB::Green;
     //90% - Red
     else if(i<0.9*NUM_LEDS)
       leds[i] = CRGB::White;
