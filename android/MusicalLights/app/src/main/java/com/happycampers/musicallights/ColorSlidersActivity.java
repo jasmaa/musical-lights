@@ -11,22 +11,24 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+/**
+ * Controls color selection via sliders
+ */
 public class ColorSlidersActivity extends AppCompatActivity {
 
     private Button submitBtn;
     private TextView displayText;
     private SeekBar[] sliders;
 
-    private int currentColor;
-    private int r, b, g;
+    private int currentColor = Color.BLACK;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_color_sliders);
 
-        //Intent intent = getIntent();
-        //currentColor = Integer.parseInt(intent.getStringExtra("color"));
+        Intent intent = getIntent();
+        currentColor = Integer.parseInt(intent.getStringExtra("color"));
 
         sliders = new SeekBar[3];
         sliders[0] = (SeekBar) findViewById(R.id.rSeek);
@@ -61,23 +63,25 @@ public class ColorSlidersActivity extends AppCompatActivity {
                 Intent myIntent = new Intent(ColorSlidersActivity.this, MainActivity.class);
                 myIntent.putExtra("color", currentColor+"");
                 ColorSlidersActivity.this.startActivity(myIntent);
+                finish();
             }
         });
 
-        //setRGB(currentColor);
+        setRGB(currentColor);
         String hexColor = String.format("#%06X", (0xFFFFFF & currentColor));
         displayText.setText(hexColor);
+        displayText.setTextColor(currentColor);
     }
 
     /**
      * Update current color from sliders
      */
     private void getRGB(){
-        r = sliders[0].getProgress();
-        g = sliders[1].getProgress();
-        b = sliders[2].getProgress();
+        int red = sliders[0].getProgress();
+        int green = sliders[1].getProgress();
+        int blue = sliders[2].getProgress();
 
-        currentColor = (0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
+        currentColor = (0xff) << 24 | (red & 0xff) << 16 | (green & 0xff) << 8 | (blue & 0xff);
         String hexColor = String.format("#%06X", (0xFFFFFF & currentColor));
         displayText.setText(hexColor);
         displayText.setTextColor(currentColor);
@@ -88,13 +92,13 @@ public class ColorSlidersActivity extends AppCompatActivity {
      * @param color
      */
     private void setRGB(int color){
-        r = (color >> 16) & 0xff;
-        g = (color >>  8) & 0xff;
-        b = (color) & 0xff;
+        int red = (color >> 16) & 0xff;
+        int green = (color >>  8) & 0xff;
+        int blue = (color) & 0xff;
 
-        sliders[0].setProgress(r);
-        sliders[1].setProgress(g);
-        sliders[2].setProgress(b);
+        sliders[0].setProgress(red);
+        sliders[1].setProgress(green);
+        sliders[2].setProgress(blue);
 
         String hexColor = String.format("#%06X", (0xFFFFFF & color));
         displayText.setText(hexColor);
