@@ -9,7 +9,7 @@
     </head>
     <body>
         <p> <input type="checkbox" id="mic"> Use mic instead of mp3 <input type="file" id="musicinput"> BPM = <span id="bpm"> ? </span> Amp = <span id="amp"> ? </span>  </p>
-        <p> Graph is magnitude(convolve(FFT(t = most recent beat), FFT(t = now))). Instructions on bottom of page.
+        <p> Graph is magnitude(convolve(FFT(t = most recent beat), FFT(t = now))). Instructions on bottom of page. Chrome only (for now).
 
         <div class="app">
             <audio src="gorillaz.mp3" controls preload="auto" id="audio" loop> </audio>
@@ -18,7 +18,7 @@
         </div>
 
         <canvas id="graph" width=1000 height=500> </canvas>
-        <p> Instructions:
+        <p style="margin-top: 300px"> Instructions:
           Click "run" to start with a default song. You can upload files while it's running to overwrite the currently
           <br>
           playing song, but this will pause it: you will have to click the play button again. Alternatively, click the checkbox before

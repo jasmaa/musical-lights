@@ -105,7 +105,6 @@ export class Beat {
       }
       else {
         let delta = energy - this.avgEnergy
-        this.graph.plot(delta)
         let jump = delta - this.localMin
         let grooveDiff = Math.min((elapsed/this.groove) % 1, (this.groove/elapsed) % 1, 1-((elapsed/this.groove) % 1), 1-((this.groove/elapsed) % 1))
 
@@ -153,9 +152,11 @@ export class Beat {
             this.localMin = delta
             document.getElementById("bpm").textContent = Math.floor(60000/this.grooveSpace)
             this.beatState.jump = jump
+            this.graph.plot(delta, true)
             return true
           }
         }
+        this.graph.plot(delta, false)
         this.avgEnergy = (this.avgEnergy * 20 + energy) / 21
         this.recentJump = jump
       }

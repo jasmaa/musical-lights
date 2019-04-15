@@ -95,47 +95,36 @@ function step(b) {
   }
 }
 
+// This was originally a cordova app.
 let app = {
-    // Application Constructor
-    initialize: function() {
-        document.addEventListener('deviceready', this.onDeviceReady.bind(this), false)
-    },
+  initialize: function() {
+      document.addEventListener('deviceready', this.onDeviceReady.bind(this), false)
+  },
 
-    // deviceready Event Handler
-    //
-    // Bind any cordova events here. Common events are:
-    // 'pause', 'resume', etc.
-    onDeviceReady: function() {
-      console.log("ok")
-      document.getElementById("run").onclick = run
-      document.getElementById("connect").onclick = () => {
-        if (bt.connected) {bt.disconnect()} else bt.connect()
-      }
-      document.getElementById("usb").onclick = () => {
-        usb.connect()
-      }
-      lights = Array(280).fill(0).map(_ => new Light())
-      let strip = document.getElementById("strip")
-      lights.forEach(light => {
-        light.e.classList.add("light")
-        strip.appendChild(light.e)
-      })
-      let musicInput = document.getElementById("musicinput")
-      musicInput.onchange = function(e) {
-        let audio = document.getElementById("audio");
-        audio.src = URL.createObjectURL(this.files[0]);
-        // not really needed in this exact case, but since it is really important in other cases,
-        // don't forget to revoke the blobURI when you don't need it
-        audio.onend = function(e) {
-          URL.revokeObjectURL(this.src);
-        }
-      }
-    },
-
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        console.log(id)
+  onDeviceReady: function() {
+    document.getElementById("run").onclick = run
+    document.getElementById("connect").onclick = () => {
+      if (bt.connected) {bt.disconnect()} else bt.connect()
     }
+    document.getElementById("usb").onclick = () => {
+      usb.connect()
+    }
+    document.getElementById("graph").width = 135/280 * document.getElementById("strip").clientWidth
+    lights = Array(280).fill(0).map(_ => new Light())
+    let strip = document.getElementById("strip")
+    lights.forEach(light => {
+      light.e.classList.add("light")
+      strip.appendChild(light.e)
+    })
+    let musicInput = document.getElementById("musicinput")
+    musicInput.onchange = function(e) {
+      let audio = document.getElementById("audio");
+      audio.src = URL.createObjectURL(this.files[0]);
+      audio.onend = function(e) {
+        URL.revokeObjectURL(this.src);
+      }
+    }
+  }
 }
 
 app.initialize()
