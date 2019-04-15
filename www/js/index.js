@@ -15,6 +15,8 @@ function run() {
   window.b = b
   if (document.getElementById("mic").checked) {
     b.connect("mic")
+    document.getElementById("audio").hidden = true
+    document.getElementById("musicinput").hidden = true
   }
   else {
     let a = document.getElementById("audio")
@@ -22,13 +24,15 @@ function run() {
     a.play()
   }
   setInterval(() => step(b), 50)
+  document.getElementById("mic").disabled = true
+  document.getElementById("run").hidden = true
 }
 
 let color = {r:0,g:0,b:255}
 
 function step(b) {
   b.update()
-  document.getElementById("amp").textContent = b.amp
+  document.getElementById("amp").textContent = b.amp.toFixed(6)
   let isBeat = b.isBeat2()
   if (isBeat) {
     color.r = 255 - color.r
@@ -36,7 +40,7 @@ function step(b) {
     color.b = 255 - color.b
   }
 
-  if (isBeat && b.beatState.jump > 80000) {
+  if (isBeat && (b.beatState.jump > 100000)) {
     if (color.r == color.g) {
       color.r = 0
       color.b = 255

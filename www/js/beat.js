@@ -15,6 +15,12 @@ export class Beat {
     this.threshold2 = 3
     this.graph = new Graph()
     this.beatState = {}
+    this.avgEnergy = 0
+    this.localMin = 0
+    this.recentJump = 0
+    this.lastBeatJump = 0
+    this.groove = 0
+    this.grooveSpace = 0
   }
 
   async connect(audio, streamsource) {
@@ -36,8 +42,8 @@ export class Beat {
       source.connect(this.analyser)
     }
     else {
-      source.connect(this.analyser)
       source = this.context.createMediaElementSource(audio);
+      source.connect(this.analyser)
       this.analyser.connect(this.context.destination)
     }
 
@@ -94,42 +100,42 @@ export class Beat {
       let now = performance.now()
       let elapsed = now - this.lastBeat
       let energy = convolve(this.envelope, this.lastBeatEnvelope)
-      if (avgEnergy == 0) {
-        avgEnergy = energy
+      if (this.avgEnergy == 0) {
+        this.avgEnergy = energy
       }
       else {
-        let delta = energy - avgEnergy
+        let delta = energy - this.avgEnergy
         this.graph.plot(delta)
-        let jump = delta - localMin
-        let grooveDiff = Math.min((elapsed/groove) % 1, (groove/elapsed) % 1, 1-((elapsed/groove) % 1), 1-((groove/elapsed) % 1))
+        let jump = delta - this.localMin
+        let grooveDiff = Math.min((elapsed/this.groove) % 1, (this.groove/elapsed) % 1, 1-((elapsed/this.groove) % 1), 1-((this.groove/elapsed) % 1))
 
-        if (delta < localMin) {
-          localMin = delta
+        if (delta < this.localMin) {
+          this.localMin = delta
         }
-        else if ((grooveDiff < 0.01 || jump < recentJump * 1.08) && elapsed > 250) {
-          let a = grooveDiff ?  (Math.max(0.005 / grooveDiff, 4) - groove * (grooveDiff - 0.005)) : 1
-          let grooveMultiplier = 1 + Math.min(Math.log(1 + Math.min(groove, 8))) * a * a
-          if (recentJump * grooveMultiplier > 2 * (lastBeatJump) * this.decay ** elapsed) {
+        else if ((grooveDiff < 0.01 || jump < this.recentJump * 1.08) && elapsed > 250) {
+          let a = grooveDiff ?  (Math.max(0.005 / grooveDiff, 4) - this.groove * (grooveDiff - 0.005)) : 1
+          let grooveMultiplier = 1 + Math.min(Math.log(1 + Math.min(this.groove, 8))) * a * a
+          if (this.recentJump * grooveMultiplier > 2 * (this.lastBeatJump + 10000) * this.decay ** elapsed) {
             this.lastBeatEnvelope = this.envelope
-            lastBeatJump = jump
+            this.lastBeatJump = jump
             this.lastBeat = now
-            //localMin = delta
-            if (groove == 0) {
-              groove++
+            //this.localMin = delta
+            if (this.groove == 0) {
+              this.groove++
               if (elapsed > 500) {
-                grooveSpace = elapsed / Math.round(elapsed / 500)
+                this.grooveSpace = elapsed / Math.round(elapsed / 500)
               }
               else {
-                grooveSpace = elapsed * Math.round(500 / elapsed)
+                this.grooveSpace = elapsed * Math.round(500 / elapsed)
               }
             }
             else if (grooveDiff < 0.05) {
-              let rhythmSpace = elapsed / Math.round(elapsed/grooveSpace)
-              if (Math.abs(rhythmSpace - grooveSpace) > 20) {
-                rhythmSpace = elapsed * Math.round(grooveSpace/elapsed)
+              let rhythmSpace = elapsed / Math.round(elapsed/this.grooveSpace)
+              if (Math.abs(rhythmSpace - this.grooveSpace) > 20) {
+                rhythmSpace = elapsed * Math.round(this.grooveSpace/elapsed)
               }
-              grooveSpace = (grooveSpace * (groove + 10) + rhythmSpace) / (groove + 11)
-              groove = groove * 0.9 + (1 - grooveDiff * grooveDiff * 20000)
+              this.grooveSpace = (this.grooveSpace * (this.groove + 10) + rhythmSpace) / (this.groove + 11)
+              this.groove = this.groove * 0.9 + (1 - grooveDiff * grooveDiff * 20000)
             }
             else {
               let rhythmSpace = elapsed / Math.round(elapsed/500)
@@ -137,35 +143,26 @@ export class Beat {
               if (Math.abs(rhythmSpace - 500) > Math.abs(rhythmSpace2 - 500)) {
                 rhythmSpace = rhythmSpace2
               }
-              grooveSpace = (grooveSpace * (groove + 10) + rhythmSpace) / (groove + 11)
-              groove = groove*0.9 - 2
+              this.grooveSpace = (this.grooveSpace * (this.groove + 10) + rhythmSpace) / (this.groove + 11)
+              this.groove = this.groove*0.9 - 2
             }
-            if (groove < 0) {groove = 0}
-            if (grooveSpace < 300) {grooveSpace = grooveSpace * 2}
-            else if (grooveSpace > 800) {grooveSpace = grooveSpace / 2}
-            //console.log(`groove = ${groove} space=${grooveSpace} diff=${grooveDiff}`)
-            localMin = delta
-            document.getElementById("bpm").textContent = Math.floor(60000/grooveSpace)
+            if (this.groove < 0) {this.groove = 0}
+            if (this.grooveSpace < 300) {this.grooveSpace = this.grooveSpace * 2}
+            else if (this.grooveSpace > 800) {this.grooveSpace = this.grooveSpace / 2}
+            //console.log(`this.groove = ${this.groove} space=${this.grooveSpace} diff=${grooveDiff}`)
+            this.localMin = delta
+            document.getElementById("bpm").textContent = Math.floor(60000/this.grooveSpace)
             this.beatState.jump = jump
             return true
           }
         }
-        avgEnergy = (avgEnergy * 20 + energy) / 21
-        devEnergy = (devEnergy * 20 + jump) / 21
-        recentJump = jump
+        this.avgEnergy = (this.avgEnergy * 20 + energy) / 21
+        this.recentJump = jump
       }
     }
     return false
   }
 }
-
-let avgEnergy = 0
-let devEnergy = 0
-let localMin = 0
-let recentJump = 0
-let lastBeatJump = 0
-let groove = 0
-let grooveSpace = 0
 
 function convolve(e1, e2) {
   let convolutionSum = 0
