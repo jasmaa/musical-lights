@@ -10,16 +10,18 @@
     <body>
         <p> <input type="checkbox" id="mic"> Use mic instead of mp3 <input type="file" id="musicinput"> BPM = <span id="bpm"> ? </span> Amp = <span id="amp"> ? </span>  </p>
         <p> Graph is magnitude(convolve(FFT(t = most recent beat), FFT(t = now))). Instructions on bottom of page. Chrome only (for now).
+          Update 05-03: This app is based on the very experimental web api, and recent changes broke this app for a bit. I've fixed it now, but expect some changes to behavior.
+        Instructions at bottom of page.</p>
 
         <div class="app">
-            <audio src="gorillaz.mp3" controls preload="auto" id="audio" loop> </audio>
+            <audio src="allstar.mp3" controls preload="auto" id="audio" loop> </audio>
             <button id="run"> run </button> <button id="connect"> connect </button> <button id="usb"> usb </button>
             <div id="strip"> </div>
         </div>
 
         <canvas id="graph" width=1000 height=500> </canvas>
         <p style="margin-top: 300px"> Instructions:
-          Click "run" to start with a default song. You can upload files while it's running to overwrite the currently
+          Click "run" to start with a default song (ideally 90-120 bpm). You can upload files while it's running to overwrite the currently
           <br>
           playing song, but this will pause it: you will have to click the play button again. Alternatively, click the checkbox before
           <br>

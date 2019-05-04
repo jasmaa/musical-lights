@@ -25,7 +25,7 @@ export class Beat {
 
   async connect(audio, streamsource) {
     this.context = new AudioContext({
-      sampleRate: 2048,
+      sampleRate: 44100,
     });
     this.analyser = this.context.createAnalyser();
     this.analyser.fftSize = 512;
@@ -46,7 +46,6 @@ export class Beat {
       source.connect(this.analyser)
       this.analyser.connect(this.context.destination)
     }
-
   }
 
   update() {
